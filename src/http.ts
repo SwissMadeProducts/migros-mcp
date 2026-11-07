@@ -1,10 +1,7 @@
 import { createServer, type ServerResponse } from "node:http";
-import axios from "axios";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 
-// Applies to the shared Axios instance used by migros-api-wrapper.
-axios.defaults.timeout = 15_000;
-const { createAnonymousServer } = await import("./anonymous.js");
+import { createAnonymousServer } from "./anonymous.js";
 const port = Number(process.env.PORT ?? 3000);
 const hosts = new Set(["localhost", "127.0.0.1", process.env.RAILWAY_PUBLIC_DOMAIN, process.env.PUBLIC_HOST].filter(Boolean));
 const origins = new Set((process.env.ALLOWED_ORIGINS ?? "").split(",").filter(Boolean));

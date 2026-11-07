@@ -14,7 +14,7 @@ PORT=3000 npm run start:http
 
 MCP endpoint: `POST /mcp`. Health check: `GET /health`. No Migros account or MCP authentication is required. The HTTP server exposes eight read-only tools: product search/details, stock, stores, promotions, and three Migusto recipe tools. Account, cart, order, Cumulus, and the currently broken upstream category-list tool are not registered by the HTTP entrypoint. Migros account environment variables are never read by that entrypoint.
 
-The HTTP service validates Host and Origin, limits bodies to 64 KiB, limits concurrency to eight requests and traffic to 300 requests/minute per process, and runs as the unprivileged node user in Docker. Set `PUBLIC_HOST` for custom domains, or use Railway's automatic `RAILWAY_PUBLIC_DOMAIN`. For direct browser integrations, set a comma-separated `ALLOWED_ORIGINS` allowlist. Server-side MCP clients do not need an Origin header.
+The runtime image contains only the anonymous entrypoint and its dependencies; account/login code is excluded. The HTTP service validates Host and Origin, limits bodies to 64 KiB, limits concurrency to eight requests and traffic to 300 requests/minute per process, and runs as the unprivileged node user in Docker. Set `PUBLIC_HOST` for custom domains, or use Railway's automatic `RAILWAY_PUBLIC_DOMAIN`. For direct browser integrations, set a comma-separated `ALLOWED_ORIGINS` allowlist. Server-side MCP clients do not need an Origin header.
 
 ## Railway
 
@@ -28,7 +28,8 @@ Only this fork's main branch should be deployed. Upstream changes are reviewed a
 - Recipe slugs include the numeric ID. For recipe ingredient products, pass both `recipeId` and `slug` from `search_recipes`.
 - Normalizes numeric product search IDs to strings accepted by the detail tool.
 - Unavailable stock data returns `inStock: null` rather than claiming the item is out of stock.
-- Updates MCP SDK and Zod and overrides deepmerge to the non-affected 4.1.1 version; audit the lockfile on updates.
+- Replaces migros-api-wrapper with a small direct client: only two HTTPS origins and explicitly allowed public API routes, no redirects, no environment proxy, fixed outbound headers, and bounded responses.
+- Updates MCP SDK and Zod; audit the lockfile on updates.
 
 The APIs are unofficial and can change. Prices/promotions are the current API response, and stock is approximate. No order placement is available through HTTP.
 
@@ -40,3 +41,9 @@ npm audit --omit=dev
 ```
 
 The HTTP tests exercise MCP initialization/discovery, verify the anonymous-only tool set even when account environment variables exist, reject forbidden origins/hosts and oversized requests, and validate product batch limits. Live checks should additionally exercise each tool after changes to upstream APIs.
+
+## Privacy boundary
+
+Outbound application requests are restricted in `src/public-http.ts` to `www.migros.ch` and `migusto.migros.ch`, with method/path validation. Requests contain only necessary search terms, language/pagination, public product/store/recipe identifiers, and a Migros guest session token. Redirects and environment proxies are disabled. MCP request headers, user IPs, host authentication, and cookies are not forwarded. The application has no telemetry, query logging, persistent query storage, database, mounted user files, or account credentials. Railway still operates the hosting infrastructure, and normal HTTPS network metadata is visible to the recipients.
+
+Dependency lifecycle scripts are disabled in the Docker build. The lockfile pins exact resolved dependency versions and integrity hashes. The hosting image runs as an unprivileged user. Source or dependency updates require the same security checks again.

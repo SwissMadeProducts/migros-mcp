@@ -1,4 +1,5 @@
 import { load } from 'cheerio';
+import { publicRequest } from './public-http.js';
 
 const recipeSlugs = new Map<string, string>();
 const base = 'https://migusto.migros.ch';
@@ -9,11 +10,9 @@ const locales: Record<string, {recipes:string; overview:string}> = {
 };
 function locale(language = 'de') { return locales[language] ? language : 'de'; }
 async function page(path:string) {
-  const res = await fetch(base + path, {signal:AbortSignal.timeout(15_000)});
-  if(!res.ok) throw new Error(`Migusto returned HTTP ${res.status}`);
-  const html = await res.text();
-  if(html.length > 5_000_000) throw new Error('Migusto response too large');
-  return {html, $:load(html), url:res.url};
+  const res = await publicRequest(base + path, {asText:true});
+  const html = res.data as string;
+  return {html, $:load(html), url:base+path};
 }
 function structured($:ReturnType<typeof load>): Record<string, any>[] {
   return $('script[type="application/ld+json"]').toArray().flatMap(el=>{
