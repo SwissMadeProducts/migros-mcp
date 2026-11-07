@@ -180,7 +180,7 @@ export async function getStock(
     return JSON.stringify({
       productId,
       storeId,
-      inStock: false,
+      inStock: null,
       message: "Product not available at this store or stock data unavailable.",
     });
   }
@@ -252,11 +252,11 @@ export async function searchRecipes(args: {
         rating: r.rating,
         teaser: r.teasertext,
         image: (r.images as Record<string, string> | undefined)?.["400w"],
-        url: r.slug ? `https://migusto.migros.ch/${lang}/rezepte/${r.slug}` : undefined,
+        url: r.url ?? (r.slug ? `https://migusto.migros.ch/${lang}/${lang === "fr" ? "recettes" : lang === "it" ? "ricette" : "rezepte"}/${r.slug}` : undefined),
       })),
       hint:
         list.length > 0
-          ? "Use get_recipe_details with a slug for ingredients + instructions. Use get_recipe_products with the recipe id (NOT slug) to get Migros product UIDs you can add to the basket."
+          ? "Use get_recipe_details with a slug for ingredients + instructions. Use get_recipe_products with the recipe id (NOT slug) to get Migros product IDs for ingredient lookups."
           : "No recipes matched. Try different search terms. Note: Migusto only serves de/fr/it content.",
     },
     null,
@@ -271,12 +271,14 @@ export async function getRecipeDetails(args: { slug: string; language?: string }
 
 export async function getRecipeProducts(args: {
   recipeId: string;
+  slug?: string;
   language?: string;
   limit?: number;
   offset?: number;
 }): Promise<string> {
   const result = await apiGetRecipeProducts({
     id: args.recipeId,
+    slug: args.slug,
     language: args.language ?? "de",
     limit: args.limit ?? 50,
     offset: args.offset ?? 0,

@@ -5,7 +5,7 @@ import { z } from "zod";
 // ---------------------------------------------------------------------------
 
 export const SearchProductsSchema = z.object({
-  query: z.string().describe("Search query for Migros products"),
+  query: z.string().min(1).max(200).describe("Search query for Migros products"),
   language: z
     .string()
     .optional()
@@ -15,21 +15,21 @@ export const SearchProductsSchema = z.object({
 
 export const GetProductDetailsSchema = z.object({
   productIds: z
-    .array(z.string())
+    .array(z.string().min(1).max(100)).min(1).max(50)
     .describe("Array of product IDs (UIDs) to get details for. Get these from search_products first."),
 });
 
 export const SearchStoresSchema = z.object({
-  query: z.string().describe("Search query for Migros stores (city name, zip code, etc.)"),
+  query: z.string().min(1).max(200).describe("Search query for Migros stores (city name, zip code, etc.)"),
 });
 
 export const GetStockSchema = z.object({
-  productId: z.string().describe("Product UID to check stock for. Get this from search_products."),
-  storeId: z.string().describe("Store ID (costCenterId) to check stock at. Get this from search_stores."),
+  productId: z.string().min(1).max(100).describe("Product UID to check stock for. Get this from search_products."),
+  storeId: z.string().min(1).max(100).describe("Store ID (costCenterId) to check stock at. Get this from search_stores."),
 });
 
 export const GetPromotionsSchema = z.object({
-  query: z.string().optional().default("").describe("Optional search query to filter promotions"),
+  query: z.string().max(200).optional().default("").describe("Optional search query to filter promotions"),
 });
 
 // ---------------------------------------------------------------------------
@@ -37,23 +37,24 @@ export const GetPromotionsSchema = z.object({
 // ---------------------------------------------------------------------------
 
 export const SearchRecipesSchema = z.object({
-  query: z.string().optional().describe("Free-text search term, e.g. 'pasta carbonara'."),
-  ingredients: z.array(z.string()).optional().describe("Filter to recipes that use these ingredients."),
+  query: z.string().max(200).optional().describe("Free-text search term, e.g. 'pasta carbonara'."),
+  ingredients: z.array(z.string().min(1).max(100)).max(20).optional().describe("Ingredient names to include as search terms."),
   language: z.string().optional().describe("Language code: de, fr, it. Default: de."),
   limit: z.number().int().min(1).max(50).optional().describe("Max recipes to return. Default: 20."),
-  offset: z.number().int().min(0).optional().describe("0-based offset for pagination."),
+  offset: z.number().int().min(0).max(10000).optional().describe("0-based offset for pagination."),
 });
 
 export const GetRecipeDetailsSchema = z.object({
-  slug: z.string().describe("Recipe slug from search_recipes (the URL-safe id)."),
+  slug: z.string().min(1).max(200).regex(/^[a-zA-Z0-9-]+(?:\/\d+)?$/).describe("Recipe slug including its numeric ID from search_recipes (e.g. klassischer-risotto/85788)."),
   language: z.string().optional().describe("Language code. Default: de."),
 });
 
 export const GetRecipeProductsSchema = z.object({
-  recipeId: z.string().describe("Recipe id (UUID) from search_recipes. NOT the slug."),
+  slug: z.string().max(200).regex(/^[a-zA-Z0-9-]+\/\d+$/).optional().describe("Recipe slug including numeric ID from search_recipes; provide it for reliable lookups."),
+  recipeId: z.string().min(1).max(100).describe("Numeric recipe ID from search_recipes. NOT the slug."),
   language: z.string().optional().describe("Language code. Default: de."),
   limit: z.number().int().min(1).max(100).optional(),
-  offset: z.number().int().min(0).optional(),
+  offset: z.number().int().min(0).max(10000).optional(),
 });
 
 // ---------------------------------------------------------------------------

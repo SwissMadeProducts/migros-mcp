@@ -28,3 +28,24 @@ export function register(
     }
   });
 }
+
+/** Anonymous endpoints expose only read-only tools, with explicit MCP annotations. */
+export function registerReadOnly(
+  server: McpServer,
+  name: string,
+  description: string,
+  shape: ZodRawShape,
+  handler: (args: any) => Promise<string>
+): void {
+  server.registerTool(name, {
+    description,
+    inputSchema: shape,
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true },
+  }, async (args: unknown) => {
+    try {
+      return { content: [{ type: "text", text: await handler(args) }] };
+    } catch (error) {
+      return { content: [{ type: "text", text: `Error: ${(error as Error).message}` }], isError: true };
+    }
+  });
+}

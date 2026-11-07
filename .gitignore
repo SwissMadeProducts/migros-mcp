@@ -2,3 +2,7 @@ node_modules
 dist
 .env
 *.mcpb
+
+.railway/*
+!.railway/railway.ts
+*.log
